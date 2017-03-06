@@ -1,13 +1,28 @@
+import java.io.*;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.io.*;
 
 public class Client
 {
-    public static void main(String[] args) throws IOException
+    public static void main(String[] args)
     {
         String hostName = "127.0.0.1";
         int portNumber = 4444;
+
+        if (args.length == 2)
+        {
+            hostName = args[0];
+
+            try
+            {
+                portNumber = Integer.parseInt(args[1]);
+            }
+            catch (NumberFormatException e)
+            {
+                System.err.println("Invalid argument");
+                System.exit(1);
+            }
+        }
 
         try (
                 Socket clientSocket = new Socket(hostName, portNumber);
@@ -23,7 +38,7 @@ public class Client
             String userInput;
 
             System.out.println("There is a message waiting from the server...\n"
-                                + in.readLine() + "\n");
+                    + in.readLine() + "\n");
 
             while ((userInput = stdIn.readLine()) != null)
             {
@@ -41,12 +56,12 @@ public class Client
         }
         catch (UnknownHostException e)
         {
-            System.err.println("Error with host " + hostName);
+            System.err.println("Can't find host: " + e);
             System.exit(1);
         }
         catch (IOException e)
         {
-            System.err.println("Error with host IO");
+            System.err.println("Error with host: " + e);
             System.exit(1);
         }
     }

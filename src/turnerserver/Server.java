@@ -1,10 +1,12 @@
 package turnerserver;
 
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.io.IOException;
+import java.net.SocketException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class Server implements Runnable
@@ -12,7 +14,7 @@ public class Server implements Runnable
     private int serverPort = 4444;
     private int threadLimit = 10;
     private int userCount = 0;
-    private boolean isStopped = false;
+    private boolean running = true;
     private ServerSocket serverSocket = null;
     private ExecutorService threadPool = null;
 
@@ -27,11 +29,9 @@ public class Server implements Runnable
     {
         startServer();
 
-        while(!isStopped())
+        while (running())
         {
-            boolean successfulConnection = processConnection();
-
-            if (!successfulConnection)
+            if (!establishConnection())
             {
                 break;
             }
@@ -40,7 +40,7 @@ public class Server implements Runnable
         stopServer();
     }
 
-    private void startServer()
+    private synchronized void startServer()
     {
         try
         {
@@ -49,18 +49,19 @@ public class Server implements Runnable
         }
         catch (IOException e)
         {
-            System.err.println("Cannot open port " + serverPort);
+            System.err.println("Cannot open port: " + e);
             System.exit(1);
         }
         catch (IllegalArgumentException e)
         {
-            System.err.println("Invalid number of threads");
+            System.err.println("Invalid argument: " + e);
             System.exit(1);
         }
     }
 
-    private boolean processConnection()
+    private boolean establishConnection()
     {
+        boolean success = true;
         Socket clientSocket = null;
         RequestThread requestThread;
 
@@ -68,26 +69,45 @@ public class Server implements Runnable
         {
             clientSocket = serverSocket.accept();
         }
+        catch (SocketException e)
+        {
+            System.err.println("Socket error: " + e);
+            success = false;
+        }
         catch (IOException e)
         {
-            System.err.println("Error accepting client connection");
+            System.err.println("Error accepting client connection: " + e);
+            success = false;
+        }
 
-            if(isStopped())
+        if (success)
+        {
+            try
             {
-                return false;
+                requestThread = new RequestThread(clientSocket, ++userCount);
+                threadPool.execute(requestThread);
+            }
+            catch (RejectedExecutionException e)
+            {
+                System.err.println("Error with thread pool: " + e);
+                success = false;
+            }
+            catch (NullPointerException e)
+            {
+                System.err.println("Error establishing connection: " + e);
+                success = false;
             }
         }
 
-        requestThread = new RequestThread(clientSocket, ++userCount);
-        threadPool.execute(requestThread);
-        return true;
+        return success;
     }
 
-    public synchronized void stopServer()
+    private synchronized void stopServer()
     {
         try
         {
             threadPool.shutdown();
+
             if (!threadPool.awaitTermination(5, TimeUnit.SECONDS))
             {
                 threadPool.shutdownNow();
@@ -95,29 +115,48 @@ public class Server implements Runnable
         }
         catch (InterruptedException e)
         {
-            System.err.println("Thread pool did not shutdown properly");
+            System.err.println("Thread pool did not shut down properly: " + e);
+        }
+        finally
+        {
+            try
+            {
+                serverSocket.close();
+            }
+            catch (IOException e)
+            {
+                System.err.println("Error closing server socket: " + e);
+            }
         }
 
-        try
-        {
-            serverSocket.close();
-        }
-        catch (IOException e)
-        {
-            System.err.println("Error closing server");
-        }
-
-        isStopped = true;
+        running = false;
     }
 
-    private synchronized boolean isStopped()
+    private synchronized boolean running()
     {
-        return isStopped;
+        return running;
     }
 
     public static void main(String[] args)
     {
-        Server server = new Server(4444, 10);
+        int port = 4444;
+        int maxThreads = 10;
+
+        if (args.length == 2)
+        {
+            try
+            {
+                port = Integer.parseInt(args[0]);
+                maxThreads = Integer.parseInt(args[1]);
+            }
+            catch (NumberFormatException e)
+            {
+                System.err.println("Invalid argument(s)");
+                System.exit(1);
+            }
+        }
+
+        Server server = new Server(port, maxThreads);
         Thread thread = new Thread(server);
         thread.start();
     }
