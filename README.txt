@@ -6,14 +6,14 @@ the server, text entered from the client will be sent to the server
 and essentially repeated back from the server to the client. Long story
 short: this is an echo server.
 
-Simply run the Server class to use the default port of 4444 and 10
-maximum threads in the thread pool.
+Simply run the turnerserver.Server class to use the default port of 4444 
+and 10 maximum threads in the thread pool.
 
 Or, to specify the port number and the number of threads, run the
-following command while in the directory in which Server.class
-is located:
+following command while in the directory in which the package called
+turnerserver is located:
 
-    java Server PORTNUMBER MAXTHREADS
+    java turnerserver.Server PORTNUMBER MAXTHREADS
 
 ... where PORTNUMBER is the port number you would like to use, and
 MAXTHREADS is the maximum number of threads you would like there to be
