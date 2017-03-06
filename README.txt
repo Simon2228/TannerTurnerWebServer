@@ -7,7 +7,7 @@ and essentially repeated back from the server to the client. Long story
 short: this is an echo server.
 
 Simply run the turnerserver.Server class to use the default port of 4444 
-and 10 maximum threads in the thread pool.
+and a maximum of 10 threads in the thread pool.
 
 Or, to specify the port number and the number of threads, run the
 following command while in the directory in which the package called
@@ -19,9 +19,10 @@ turnerserver is located:
 MAXTHREADS is the maximum number of threads you would like there to be
 in the thread pool.
 
-To engage with the server, there is a simple Client class. While the
-Server class is running, simply run the Client class to use the default
-localhost and default port of 4444.
+To engage with the server, there is a simple Client class. As long as the
+Server is running, a client will maintain a connection with the server until 
+the message "close" is sent. While the Server class is running, simply run 
+the Client class to use the  default localhost and default port of 4444.
 
 Or, to specify the host name and port number, run the following command
 while in the directory in which Client.class is located:

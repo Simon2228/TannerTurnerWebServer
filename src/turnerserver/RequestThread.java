@@ -19,12 +19,13 @@ public class RequestThread implements Runnable
     @Override
     public void run()
     {
-        try (
-                InputStream input  = clientSocket.getInputStream();
-                OutputStream output = clientSocket.getOutputStream();
-                InputStreamReader inputReader = new InputStreamReader(input);
-                BufferedReader in = new BufferedReader(inputReader);
-                PrintWriter out = new PrintWriter(output, true)
+        try 
+        (
+            InputStream input = clientSocket.getInputStream();
+            OutputStream output = clientSocket.getOutputStream();
+            InputStreamReader inputReader = new InputStreamReader(input);
+            BufferedReader in = new BufferedReader(inputReader);
+            PrintWriter out = new PrintWriter(output, true)
         )
         {
             echo(in, out);
